@@ -134,7 +134,7 @@ export function mountApp({ root, store }) {
           el("label", {}, ["Quick add"]),
           el("input", {
             id: "quick-add",
-            placeholder: "Examples: 6 starbucks food  |  60 costco split gas 40 incense 20",
+            placeholder: "Ex: 6 starbucks food  |  60 costco split gas 40 incense 20",
             onkeydown: (e) => {
               if (e.key !== "Enter") return;
               e.preventDefault();
@@ -152,7 +152,7 @@ export function mountApp({ root, store }) {
             },
           }),
           errors.quick ? renderDraftErrors({ quick: errors.quick }) : null,
-          el("div", { class: "small", style: "margin-top:4px" }, ["Use 'split' then pairs like: gas 40 snacks 20"]),
+          el("div", { class: "small", style: "margin-top:10px" }, ["Use 'split' then pairs like: gas 40 snacks 20"]),
         ]),
         el("div", {}, [
           el(
