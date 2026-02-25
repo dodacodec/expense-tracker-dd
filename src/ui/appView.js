@@ -368,7 +368,7 @@ el("div", { class: "row cols-2", style: "margin-top:10px" }, [
           ]),
 
       el("div", { class: "row cols-2", style: "margin-top:10px" }, [
-        el("button", { id: "btn-save", type: "button", class: "primary", onclick: onSave }, ["Save transaction"]),
+        el("button", { id: "btn-save", type: "submit", class: "primary"}, ["Save transaction"]),
         el("button", { type: "button", onclick: () => store.dispatch({ type: ACTIONS.DRAFT_RESET, payload: { nowISO: draft.dateISO } }) }, ["Reset form"]),
       ]),
     ]);
