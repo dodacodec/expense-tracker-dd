@@ -51,8 +51,15 @@ label {
 }
 
 /* iOS Safari: prevent zoom on focus by using >=16px font-size */
-input, select, textarea, button {
+input, select, button, textarea {
+  width: 100%;
   font-size: 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--text);
+  padding: 10px 10px;
+  outline: none;
 }
 
 select option {
