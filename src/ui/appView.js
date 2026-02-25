@@ -290,7 +290,7 @@ el("div", { class: "row cols-2", style: "margin-top:10px" }, [
               el("label", {}, ["Label / Subcategory (optional)"]),
               el("input", {
                 id: "draft-label",
-                placeholder: "e.g., Snacks, Juuls, Dog treats, Parts",
+                placeholder: "e.g., Snacks, Food, Dog treats, Parts",
                 value: draft.label,
                 oninput: (e) => patchDraft({ label: e.target.value }),
               }),
@@ -315,7 +315,7 @@ el("div", { class: "row cols-2", style: "margin-top:10px" }, [
                 el("div", {}, [
                   el("label", {}, ["Label"]),
                   el("input", {
-                    placeholder: "Juuls / Snacks / Parts",
+                    placeholder: "Gas / Snacks / Parts",
                     value: s.label,
                     oninput: (e) => {
                       const curSplits = store.getState().ui.draft.splits;
