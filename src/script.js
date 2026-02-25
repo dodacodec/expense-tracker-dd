@@ -54,5 +54,7 @@ store.subscribe((state, prev, action) => {
 
 mountApp({ root, store });
 
+document.title = "NEW BUILD " + new Date().toISOString();
+
 // debug helpers
 window.__store = store;
