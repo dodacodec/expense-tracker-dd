@@ -111,10 +111,10 @@ export function mountApp({ root, store }) {
             },
             []
           ),
-          el("div", { class: "small" }, ["Filter the list + totals by month"]),
+          el("div", { class: "small" }, [""]),
         ]),
         el("div", {}, [
-          el("label", {}, ["Quick stats"]),
+          el("label", {}, [""]),
           el("div", { class: "pill" }, [
             `Income: ${formatMoneyUSD(summary.incomeTotal)} · Net outflow: ${formatMoneyUSD(summary.expenseTotal - summary.incomeTotal)}`
           ]),
@@ -125,7 +125,7 @@ export function mountApp({ root, store }) {
     const form = el("form", { class: "card", onsubmit: onSubmit }, [
       el("div", { class: "kpi" }, [
         el("div", { class: "item-title" }, ["Add transaction"]),
-        el("div", { class: "small" }, ["v1 — bank-truth parent + optional splits"]),
+        el("div", { class: "small" }, [""]),
       ]),
 
       // Quick Add (parser)
@@ -152,7 +152,7 @@ export function mountApp({ root, store }) {
             },
           }),
           errors.quick ? renderDraftErrors({ quick: errors.quick }) : null,
-          el("div", { class: "small" }, ["Tip: use 'split' then pairs like: gas 40 snacks 20"]),
+          el("div", { class: "small", style: "margin-top:4px" }, ["Use 'split' then pairs like: gas 40 snacks 20"]),
         ]),
         el("div", {}, [
           el(
@@ -185,7 +185,7 @@ export function mountApp({ root, store }) {
             },
             ["Parse → Fill form"]
           ),
-          el("div", { class: "small", style: "margin-top:8px" }, ["Then tap Save transaction"]),
+          el("div", { class: "small", style: "margin-top:8px" }, [""]),
         ]),
       ]),
 
