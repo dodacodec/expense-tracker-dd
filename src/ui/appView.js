@@ -144,7 +144,11 @@ export function mountApp({ root, store }) {
                 store.dispatch({ type: ACTIONS.SET_ERRORS, payload: { quick: res.error } });
                 return;
               }
-              store.dispatch({ type: ACTIONS.DRAFT_SET, payload: res.patch });
+              store.dispatch({ type: ACTIONS.DRAFT_SET, payload: res.patch });              
+              // iOS: remove focus to avoid staying zoomed
+              if (document.activeElement && typeof document.activeElement.blur === "function") {
+                document.activeElement.blur();
+              }
             },
           }),
           errors.quick ? renderDraftErrors({ quick: errors.quick }) : null,
@@ -165,6 +169,18 @@ export function mountApp({ root, store }) {
                   return;
                 }
                 store.dispatch({ type: ACTIONS.DRAFT_SET, payload: res.patch });
+
+                // iOS: remove focus to avoid staying zoomed
+                if (document.activeElement && typeof document.activeElement.blur === "function") {
+                  document.activeElement.blur();
+                }
+
+                // 👇 ADD THIS RIGHT HERE
+                const saveBtn = document.getElementById("btn-save");
+                if (saveBtn) {
+                  saveBtn.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+                
               },
             },
             ["Parse → Fill form"]
@@ -352,7 +368,7 @@ el("div", { class: "row cols-2", style: "margin-top:10px" }, [
           ]),
 
       el("div", { class: "row cols-2", style: "margin-top:10px" }, [
-        el("button", { type: "submit", class: "primary" }, ["Save transaction"]),
+        el("button", { id: "btn-save", type: "button", class: "primary", onclick: onSave }, ["Save transaction"]),
         el("button", { type: "button", onclick: () => store.dispatch({ type: ACTIONS.DRAFT_RESET, payload: { nowISO: draft.dateISO } }) }, ["Reset form"]),
       ]),
     ]);
