@@ -5,8 +5,6 @@ import { mountApp } from "./ui/appView.js";
 import { DEFAULT_ACCOUNTS, DEFAULT_TXN_TYPES, DEFAULT_CATEGORIES } from "./domain/catalogs.js";
 import { isoToday } from "./domain/expenseModel.js";
 
-document.getElementById("app").textContent = "Script loaded ✅";
-
 function buildCatalogs() {
   return {
     accounts: DEFAULT_ACCOUNTS,
