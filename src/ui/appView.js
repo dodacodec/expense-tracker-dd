@@ -2,6 +2,7 @@ import { ACTIONS } from "../core/reducer.js";
 import { validateDraft, draftToTxn, computeSplitSum } from "../domain/expenseModel.js";
 import { selectMonthSummary, formatMoneyUSD } from "../core/selectors.js";
 import { parseQuickEntry } from "../domain/quickParser.js";
+import { buildCsv, downloadCsv } from "../domain/csvExport.js";
 
 function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
@@ -111,6 +112,26 @@ export function mountApp({ root, store }) {
             },
             []
           ),
+          
+            el(
+              "button",
+              {
+                type: "button",
+                class: "secondary",
+                style: "margin-top:10px",
+                onclick: () => {
+                  const s = store.getState();
+                  const csvText = buildCsv({ state: s, scope: "month" });
+                  const month = s.settings?.activeMonth || "all";
+                  downloadCsv({
+                    csvText,
+                    filename: `expenses_${month}.csv`,
+                  });
+                },
+              },
+              ["Export CSV"]
+            ),
+          
           el("div", { class: "small" }, [""]),
         ]),
         el("div", {}, [
