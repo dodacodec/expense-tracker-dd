@@ -202,3 +202,111 @@ button.danger {
 .bad { color: var(--danger); }
 .good { color: var(--ok); }
 .warn { color: var(--warn); }
+
+.budget-row { transition: border-color 120ms ease; }
+.budget-row-warn { border-color: rgba(251, 191, 36, 0.55); }
+.budget-row-over { border-color: rgba(255, 107, 107, 0.65); }
+
+.budget-row {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 8px;
+  background: rgba(255,255,255,0.02);
+}
+
+.budget-row-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+.budget-row-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.budget-row-details {
+  margin-top: 8px;
+  border-top: 1px dashed var(--line);
+  padding-top: 8px;
+}
+
+.collapsible-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  background: transparent;
+  border: 1px solid var(--line);
+  padding: 10px;
+}
+
+.quick-examples-wrap {
+  position: relative;
+  margin-top: 0;
+}
+
+.quick-examples-link {
+  width: auto;
+  border: 0;
+  background: transparent;
+  color: #c7d2e2;
+  font-style: italic;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.quick-examples-tip {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 6px;
+  z-index: 20;
+  min-width: 240px;
+  max-width: min(92vw, 360px);
+  background: #1b2533;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px;
+  display: grid;
+  gap: 4px;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.35);
+}
+
+
+
+.quick-helper-row {
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.tools-status {
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  transition: opacity 180ms ease;
+}
+
+.tools-status-ok {
+  color: #d1fae5;
+  background: rgba(34, 197, 94, 0.22);
+  border-color: rgba(34, 197, 94, 0.45);
+}
+
+.tools-status-warn {
+  color: #fef3c7;
+  background: rgba(251, 191, 36, 0.22);
+  border-color: rgba(251, 191, 36, 0.45);
+}
