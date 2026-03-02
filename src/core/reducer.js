@@ -10,6 +10,7 @@ export const ACTIONS = {
   DRAFT_RESET: "DRAFT_RESET",
   DRAFT_SET: "DRAFT_SET",
   SET_ERRORS: "SET_ERRORS",
+  SET_STORAGE_STATUS: "SET_STORAGE_STATUS",
 
   ADD_TXN: "ADD_TXN",
   DELETE_TXN: "DELETE_TXN",
@@ -32,6 +33,7 @@ export function initialState(nowISO) {
     ui: {
       draft: buildNewTxnDraft({ dateISO: nowISO }),
       errors: {},
+      storageStatus: { persistent: true, message: "" },
     },
   };
 }
@@ -117,6 +119,13 @@ export function reducer(state, action) {
       return {
         ...state,
         ui: { ...state.ui, errors: action.payload || {} },
+      };
+    }
+
+    case ACTIONS.SET_STORAGE_STATUS: {
+      return {
+        ...state,
+        ui: { ...state.ui, storageStatus: action.payload || { persistent: true, message: "" } },
       };
     }
 

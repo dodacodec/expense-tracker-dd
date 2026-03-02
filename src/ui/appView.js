@@ -84,6 +84,7 @@ export function mountApp({ root, store }) {
 
     const draft = state.ui.draft;
     const errors = state.ui.errors;
+    const storageStatus = state.ui.storageStatus;
 
     const splitSum = draft.hasSplits ? computeSplitSum(draft) : 0;
     const totalAmt = Number(String(draft.amount).replace(/[^0-9.-]/g, "")) || 0;
@@ -219,9 +220,11 @@ export function mountApp({ root, store }) {
         ]),
         el("div", {}, [
           el("label", {}, ["Account"]),
-          el("select", { onchange: (e) => patchDraft({ accountId: e.target.value }), value: draft.accountId }, [
+          el("select", { onchange: (e) => patchDraft({ accountId: e.target.value }), value: draft.accountId || "" }, [
+            el("option", { value: "" }, ["Select account…"]),
             ...optionList(accounts, draft.accountId),
           ]),
+          errors.accountId ? renderDraftErrors({ account: errors.accountId }) : null,
         ]),
         el("div", {}, [
           el("label", {}, ["Posted date"]),
@@ -484,8 +487,16 @@ el("div", { class: "row cols-2", style: "margin-top:10px" }, [
       } catch (_) {}
     }
 
+    const storageBanner = storageStatus && !storageStatus.persistent
+      ? el("div", { class: "card", style: "border-color:#7f1d1d;background:#fff1f2" }, [
+          el("div", { class: "bad", style: "font-weight:600" }, ["Storage warning"]),
+          el("div", { class: "small" }, [storageStatus.message || "Storage may not persist in this browser session."]),
+        ])
+      : null;
+
     // Rebuild DOM
     root.innerHTML = "";
+    if (storageBanner) root.appendChild(storageBanner);
     root.appendChild(header);
     root.appendChild(form);
     root.appendChild(breakdown);
