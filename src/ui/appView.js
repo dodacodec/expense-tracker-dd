@@ -1,6 +1,7 @@
 import { ACTIONS } from "../core/reducer.js";
-import { validateDraft, draftToTxn, computeSplitSum } from "../domain/expenseModel.js";
+import { validateDraft, draftToTxn, computeSplitSum, isoToday } from "../domain/expenseModel.js";
 import { selectMonthSummary, formatMoneyUSD } from "../core/selectors.js";
+import { selectSpendByCategoryForMonth, selectSpendByCategoryForCurrentWeek, budgetStatus } from "../core/budgetSelectors.js";
 import { parseQuickEntry } from "../domain/quickParser.js";
 import { buildCsv, downloadCsv } from "../domain/csvExport.js";
 
@@ -77,6 +78,10 @@ export function mountApp({ root, store }) {
 
     const monthKey = state.settings.activeMonth;
     const summary = selectMonthSummary(state, monthKey);
+    const todayISO = isoToday();
+    const monthSpend = selectSpendByCategoryForMonth(state, monthKey);
+    const weekSpend = selectSpendByCategoryForCurrentWeek(state, todayISO);
+    const budgets = state.settings.budgets || { thresholds: { warn: 0.8, hard: 1.0 }, monthly: {}, weekly: {} };
 
     const merchantDatalist = el("datalist", { id: "merchant-list" }, 
     recentMerchants.map((m) => el("option", { value: m }, []))
@@ -84,6 +89,10 @@ export function mountApp({ root, store }) {
 
     const draft = state.ui.draft;
     const errors = state.ui.errors;
+    const storageStatus = state.ui.storageStatus;
+    const panels = state.ui.panels || { budgetsOpen: false, netOutflowOpen: false };
+    const quickAddExamplesOpen = !!state.ui.quickAddExamplesOpen;
+    const toast = state.ui.toast || { message: null, kind: null };
 
     const splitSum = draft.hasSplits ? computeSplitSum(draft) : 0;
     const totalAmt = Number(String(draft.amount).replace(/[^0-9.-]/g, "")) || 0;
@@ -112,26 +121,7 @@ export function mountApp({ root, store }) {
             },
             []
           ),
-          
-            el(
-              "button",
-              {
-                type: "button",
-                class: "secondary",
-                style: "margin-top:10px",
-                onclick: () => {
-                  const s = store.getState();
-                  const csvText = buildCsv({ state: s, scope: "month" });
-                  const month = s.settings?.activeMonth || "all";
-                  downloadCsv({
-                    csvText,
-                    filename: `expenses_${month}.csv`,
-                  });
-                },
-              },
-              ["Export CSV"]
-            ),
-          
+
           el("div", { class: "small" }, [""]),
         ]),
         el("div", {}, [
@@ -141,6 +131,144 @@ export function mountApp({ root, store }) {
           ]),
         ]),
       ]),
+    ]);
+
+    const toolsCard = el("div", { class: "card" }, [
+      el("div", { class: "kpi" }, [
+        el("div", { class: "item-title" }, ["Tools"]),
+        toast.message
+          ? el("div", { class: `pill tools-status ${toast.kind === "warn" ? "tools-status-warn" : "tools-status-ok"}` }, [toast.message])
+          : el("div", { class: "small" }, ["Actions for this month"]),
+      ]),
+      el(
+        "button",
+        {
+          type: "button",
+          class: "secondary",
+          style: "margin-top:10px",
+          onclick: () => {
+            try {
+              const s = store.getState();
+              const csvText = buildCsv({ state: s, scope: "month" });
+              const month = s.settings?.activeMonth || "all";
+              downloadCsv({
+                csvText,
+                filename: `expenses_${month}.csv`,
+              });
+              store.dispatch({ type: ACTIONS.SHOW_TOAST, payload: { message: "CSV exported ✓", kind: "ok" } });
+            } catch (err) {
+              console.warn("Export failed:", err);
+              store.dispatch({ type: ACTIONS.SHOW_TOAST, payload: { message: "Export failed", kind: "warn" } });
+            }
+
+            clearTimeout(mountApp.__toastTimer);
+            mountApp.__toastTimer = setTimeout(() => {
+              store.dispatch({ type: ACTIONS.CLEAR_TOAST });
+            }, 1700);
+          },
+        },
+        ["Export CSV"]
+      ),
+    ]);
+
+    const budgetsContent = el("div", { class: "list", style: "margin-top:10px" }, [
+      ...categories.map((cat) => {
+        const monthlyCap = budgets.monthly?.[cat.id] ?? "";
+        const weeklyCap = budgets.weekly?.[cat.id] ?? "";
+        const monthlySpent = monthSpend[cat.id] || 0;
+        const weeklySpent = weekSpend[cat.id] || 0;
+
+        const mStatus = budgetStatus(monthlySpent, monthlyCap, budgets.thresholds);
+        const wStatus = budgetStatus(weeklySpent, weeklyCap, budgets.thresholds);
+        const rowStatus = mStatus.status === "over" || wStatus.status === "over"
+          ? "over"
+          : (mStatus.status === "warn" || wStatus.status === "warn" ? "warn" : "ok");
+
+        const leftMonthly = Number(monthlyCap) > 0 ? Number(monthlyCap) - monthlySpent : null;
+        const leftWeekly = Number(weeklyCap) > 0 ? Number(weeklyCap) - weeklySpent : null;
+
+        const rowClass = `budget-row ${rowStatus === "warn" ? "budget-row-warn" : rowStatus === "over" ? "budget-row-over" : ""}`;
+        const pillClass = `pill ${rowStatus === "warn" ? "warn" : rowStatus === "over" ? "bad" : "good"}`;
+        const pillText = rowStatus === "over" ? "OVER" : rowStatus === "warn" ? "Approaching" : "OK";
+        const isOpen = mountApp.__budgetOpenCategoryId === cat.id;
+
+        return el("div", { class: rowClass }, [
+          el("button", {
+            type: "button",
+            class: "budget-row-head",
+            onclick: () => {
+              mountApp.__budgetOpenCategoryId = isOpen ? null : cat.id;
+              render();
+            },
+          }, [
+            el("div", { class: "item-title" }, [cat.name]),
+            el("div", { class: "budget-row-right" }, [
+              el("span", { class: pillClass }, [pillText]),
+              el("span", { class: "small mono" }, [`M: ${leftMonthly == null ? "—" : formatMoneyUSD(leftMonthly)}`]),
+              el("span", { class: "small mono" }, [`W: ${leftWeekly == null ? "—" : formatMoneyUSD(leftWeekly)}`]),
+            ]),
+          ]),
+          isOpen
+            ? el("div", { class: "budget-row-details" }, [
+                el("div", { class: "row cols-2" }, [
+                  el("div", {}, [
+                    el("label", {}, ["Monthly cap"]),
+                    el("input", {
+                      inputmode: "decimal",
+                      placeholder: "e.g., 200",
+                      value: monthlyCap,
+                      oninput: (e) => {
+                        const val = e.target.value;
+                        const normalized = val === "" ? "" : (Number(String(val).replace(/[^0-9.]/g, "")) || 0);
+                        store.dispatch({
+                          type: ACTIONS.SET_BUDGETS,
+                          payload: { monthly: { [cat.id]: normalized } },
+                        });
+                      },
+                    }),
+                  ]),
+                  el("div", {}, [
+                    el("label", {}, ["Weekly cap"]),
+                    el("input", {
+                      inputmode: "decimal",
+                      placeholder: "e.g., 60",
+                      value: weeklyCap,
+                      oninput: (e) => {
+                        const val = e.target.value;
+                        const normalized = val === "" ? "" : (Number(String(val).replace(/[^0-9.]/g, "")) || 0);
+                        store.dispatch({
+                          type: ACTIONS.SET_BUDGETS,
+                          payload: { weekly: { [cat.id]: normalized } },
+                        });
+                      },
+                    }),
+                  ]),
+                ]),
+                el("button", {
+                  type: "button",
+                  class: "secondary",
+                  style: "margin-top:8px",
+                  onclick: () => {
+                    mountApp.__budgetOpenCategoryId = null;
+                    render();
+                  },
+                }, ["Done"]),
+              ])
+            : null,
+        ]);
+      }),
+    ]);
+
+    const budgetsPanel = el("div", { class: "card" }, [
+      el("button", {
+        type: "button",
+        class: "collapsible-head",
+        onclick: () => store.dispatch({ type: ACTIONS.UI_TOGGLE_PANEL, payload: { key: "budgetsOpen" } }),
+      }, [
+        el("span", { class: "item-title" }, ["Budgets"]),
+        el("span", { class: "small mono" }, [panels.budgetsOpen ? "▼" : "▶"]),
+      ]),
+      panels.budgetsOpen ? budgetsContent : null,
     ]);
 
     const form = el("form", { class: "card", onsubmit: onSubmit }, [
@@ -173,7 +301,28 @@ export function mountApp({ root, store }) {
             },
           }),
           errors.quick ? renderDraftErrors({ quick: errors.quick }) : null,
-          el("div", { class: "small", style: "margin-top:10px" }, ["Use 'split' then pairs like: gas 40 snacks 20"]),
+          el("div", { class: "quick-helper-row" }, [
+            el("div", { class: "small" }, ["Use 'split' then pairs like: gas 40 snacks 20"]),
+            el("div", { class: "quick-examples-wrap" }, [
+              el("button", {
+                type: "button",
+                class: "quick-examples-link",
+                onmousedown: (e) => e.preventDefault(),
+                onclick: (e) => {
+                  e.stopPropagation();
+                  store.dispatch({ type: ACTIONS.UI_TOGGLE_QUICK_ADD_EXAMPLES });
+                },
+              }, ["Examples"]),
+              quickAddExamplesOpen
+                ? el("div", { class: "quick-examples-tip", onclick: (e) => e.stopPropagation() }, [
+                    el("div", { class: "mono small" }, ['"6 starbucks food"']),
+                    el("div", { class: "mono small" }, ['"40 wawa split 10 coffee 30 gas"']),
+                    el("div", { class: "mono small" }, ['"60 costco split gas 40 snacks 20"']),
+                    el("div", { class: "mono small" }, ['"23 amazon house parts"']),
+                  ])
+                : null,
+            ]),
+          ]),
         ]),
         el("div", {}, [
           el(
@@ -219,9 +368,11 @@ export function mountApp({ root, store }) {
         ]),
         el("div", {}, [
           el("label", {}, ["Account"]),
-          el("select", { onchange: (e) => patchDraft({ accountId: e.target.value }), value: draft.accountId }, [
+          el("select", { onchange: (e) => patchDraft({ accountId: e.target.value }), value: draft.accountId || "" }, [
+            el("option", { value: "" }, ["Select account…"]),
             ...optionList(accounts, draft.accountId),
           ]),
+          errors.accountId ? renderDraftErrors({ account: errors.accountId }) : null,
         ]),
         el("div", {}, [
           el("label", {}, ["Posted date"]),
@@ -464,11 +615,20 @@ el("div", { class: "row cols-2", style: "margin-top:10px" }, [
       ]),
     ]);
 
-    const sticky = el("div", { class: "sticky-bar" }, [
-      el("div", { class: "sticky-inner" }, [
-        el("div", { class: "small" }, ["Net outflow (month)"]),
-        el("div", { class: "value mono" }, [formatMoneyUSD(summary.expenseTotal - summary.incomeTotal)]),
+    const netOutflowPanel = el("div", { class: "card" }, [
+      el("button", {
+        type: "button",
+        class: "collapsible-head",
+        onclick: () => store.dispatch({ type: ACTIONS.UI_TOGGLE_PANEL, payload: { key: "netOutflowOpen" } }),
+      }, [
+        el("span", { class: "item-title" }, ["Net outflow"]),
+        el("span", { class: "small mono" }, [panels.netOutflowOpen ? "▼" : "▶"]),
       ]),
+      panels.netOutflowOpen
+        ? el("div", { class: "pill", style: "margin-top:10px" }, [
+            `Net outflow (month): ${formatMoneyUSD(summary.expenseTotal - summary.incomeTotal)}`
+          ])
+        : null,
     ]);
 
     // --- preserve focus + cursor across full re-renders ---
@@ -484,13 +644,29 @@ el("div", { class: "row cols-2", style: "margin-top:10px" }, [
       } catch (_) {}
     }
 
+    const storageBanner = storageStatus && !storageStatus.persistent
+      ? el("div", { class: "card", style: "border-color:#7f1d1d;background:#fff1f2" }, [
+          el("div", { class: "bad", style: "font-weight:600" }, ["Storage warning"]),
+          el("div", { class: "small" }, [storageStatus.message || "Storage may not persist in this browser session."]),
+        ])
+      : null;
+
     // Rebuild DOM
     root.innerHTML = "";
+    if (storageBanner) root.appendChild(storageBanner);
     root.appendChild(header);
     root.appendChild(form);
     root.appendChild(breakdown);
     root.appendChild(list);
-    root.appendChild(sticky);
+    root.appendChild(toolsCard);
+    root.appendChild(budgetsPanel);
+    root.appendChild(netOutflowPanel);
+
+    root.onclick = (e) => {
+      if (!quickAddExamplesOpen) return;
+      if (e.target.closest(".quick-examples-wrap")) return;
+      store.dispatch({ type: ACTIONS.UI_CLOSE_QUICK_ADD_EXAMPLES });
+    };
 
     // Restore focus
     if (activeId) {

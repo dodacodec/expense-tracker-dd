@@ -30,3 +30,29 @@ export function saveState(state) {
 export function clearState() {
   localStorage.removeItem(KEY);
 }
+
+
+export function detectStorageStatus() {
+  const probeKey = `${KEY}__probe`;
+  const probeVal = `ok_${Date.now()}`;
+
+  try {
+    localStorage.setItem(probeKey, probeVal);
+    const roundTrip = localStorage.getItem(probeKey);
+    localStorage.removeItem(probeKey);
+
+    if (roundTrip !== probeVal) {
+      return {
+        persistent: false,
+        message: "Storage may not persist on this device/browser session.",
+      };
+    }
+
+    return { persistent: true, message: "" };
+  } catch (e) {
+    return {
+      persistent: false,
+      message: "Storage is unavailable. Entries may be lost after refresh.",
+    };
+  }
+}

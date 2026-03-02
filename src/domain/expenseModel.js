@@ -23,7 +23,7 @@ export function normalizeAmount(input) {
 export function buildNewTxnDraft(defaults = {}) {
   return {
     typeId: "expense",
-    accountId: "bofa_cc",
+    accountId: "",
     dateISO: isoToday(),
     merchant: "",
     note: "",
@@ -73,7 +73,7 @@ export function validateDraft(draft) {
   }
 
   if (!draft.typeId) errors.typeId = "Pick a type.";
-  if (!draft.accountId) errors.accountId = "Pick an account.";
+  if (!draft.accountId) errors.accountId = "Select an account.";
 
   if (draft.hasSplits) {
     if (draft.splits.length === 0) errors.splits = "Add at least one split.";
