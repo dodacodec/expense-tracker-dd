@@ -1,6 +1,6 @@
 import { createStore } from "./core/store.js";
 import { reducer, initialState, ACTIONS } from "./core/reducer.js";
-import { loadState, saveState } from "./persistence/storage.js";
+import { loadState, saveState, detectStorageStatus } from "./persistence/storage.js";
 import { mountApp } from "./ui/appView.js";
 import { DEFAULT_ACCOUNTS, DEFAULT_TXN_TYPES, DEFAULT_CATEGORIES } from "./domain/catalogs.js";
 import { isoToday } from "./domain/expenseModel.js";
@@ -42,6 +42,11 @@ if (persisted) {
     store.dispatch({ type: ACTIONS.HYDRATE, payload: { catalogs: buildCatalogs() } });
   }
 }
+
+store.dispatch({
+  type: ACTIONS.SET_STORAGE_STATUS,
+  payload: detectStorageStatus(),
+});
 
 let saveTimer = null;
 store.subscribe((state, prev, action) => {
